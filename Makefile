@@ -29,7 +29,7 @@ EVAL_WIN2012_X64 ?= http://download.microsoft.com/download/6/D/A/6DAB58BA-F939-4
 EVAL_WIN2012_X64_CHECKSUM ?= 922b365c3360ce630f6a4b4f2f3c79e66165c0fb
 
 WIN2008R2_X64 ?= iso/en_windows_server_2008_r2_with_sp1_vl_build_x64_dvd_617403.iso
-WIN2008R2_X64_CHECKSUM ?= 7e7e9425041b3328ccf723a0855c2bc4f462ec57
+WIN2008R2_X64_CHECKSUM ?= d3fd7bf85ee1d5bdd72de5b2c69a7b470733cd0a
 WIN2012_X64 ?= iso/en_windows_server_2012_x64_dvd_915478.iso
 WIN2012_X64_CHECKSUM ?= d09e752b1ee480bc7e93dfa7d5c3a9b8aac477ba
 WIN2012R2_X64 ?= iso/en_windows_server_2012_r2_with_update_x64_dvd_6052708.iso
@@ -106,16 +106,20 @@ TEST_BOX_FILES := $(foreach builder, $(BUILDER_TYPES), $(foreach box_filename, $
 VMWARE_BOX_DIR := box/vmware
 VIRTUALBOX_BOX_DIR := box/virtualbox
 PARALLELS_BOX_DIR := box/parallels
+QEMU_BOX_DIR := box/qemu
 VMWARE_BOX_FILES := $(foreach box_filename, $(BOX_FILENAMES), $(VMWARE_BOX_DIR)/$(box_filename))
 VIRTUALBOX_BOX_FILES := $(foreach box_filename, $(BOX_FILENAMES), $(VIRTUALBOX_BOX_DIR)/$(box_filename))
 PARALLELS_BOX_FILES := $(foreach box_filename, $(BOX_FILENAMES), $(PARALLELS_BOX_DIR)/$(box_filename))
+QEMU_BOX_FILES := $(foreach box_filename, $(BOX_FILENAMES), $(QEMU_BOX_DIR)/$(box_filename))
 BOX_FILES := $(foreach builder, $(BUILDER_TYPES), $(foreach box_filename, $(BOX_FILENAMES), box/$(builder)/$(box_filename)))
 VMWARE_OUTPUT := output-vmware-iso
 VIRTUALBOX_OUTPUT := output-virtualbox-iso
 PARALLELS_OUTPUT := output-parallels-iso
+QEMU_OUTPUT := output-qemu
 VMWARE_BUILDER := vmware-iso
 VIRTUALBOX_BUILDER := virtualbox-iso
 PARALLELS_BUILDER := parallels-iso
+QEMU_BUILDER := qemu
 CURRENT_DIR := $(shell pwd)
 UNAME_O := $(shell uname -o 2> /dev/null)
 UNAME_P := $(shell uname -p 2> /dev/null)
@@ -187,6 +191,8 @@ parallels/$(1): $(PARALLELS_BOX_DIR)/$(1)$(BOX_SUFFIX)
 parallels/$(1)-cygwin: $(PARALLELS_BOX_DIR)/$(1)-cygwin$(BOX_SUFFIX)
 
 parallels/$(1)-ssh: $(PARALLELS_BOX_DIR)/$(1)-ssh$(BOX_SUFFIX)
+
+qemu/$(1): $(QEMU_BOX_DIR)/$(1)$(BOX_SUFFIX)
 
 test-vmware/$(1): test-$(VMWARE_BOX_DIR)/$(1)$(BOX_SUFFIX)
 
@@ -292,7 +298,7 @@ test-win81-cygwin: test-win81x64-enterprise-cygwin test-win81x64-pro-cygwin test
 
 win2008r2: win2008r2-winrm win2008r2-openssh win2008r2-cygwin
 
-win2008r2-winrm: win2008r2-datacenter win2008r2-enterprise win2008r2-standard win2008r2-web
+win2008r2-winrm: win2008r2-datacenter win2008r2-enterprise win2008r2-standard win2008r2-web win2008r2-standard-novagrant
 
 win2008r2-openssh: win2008r2-datacenter-ssh win2008r2-enterprise-ssh win2008r2-standard-ssh win2008r2-web-ssh
 
@@ -369,6 +375,11 @@ $(PARALLELS_BOX_DIR)/$(1)$(BOX_SUFFIX): $(1).json
 	mkdir -p $(PARALLELS_BOX_DIR)
 	$(PACKER) build -only=$(PARALLELS_BUILDER) $(PACKER_VARS) -var "iso_url=$(2)" -var "iso_checksum=$(3)" $(1).json
 
+$(QEMU_BOX_DIR)/$(1)$(BOX_SUFFIX): $(1).json
+	rm -rf $(QEMU_OUTPUT)
+	mkdir -p $(QEMU_BOX_DIR)
+	$(PACKER) build -only=$(QEMU_BUILDER) $(PACKER_VARS) -var "iso_url=$(2)" -var "iso_checksum=$(3)" $(1).json
+
 $(VIRTUALBOX_BOX_DIR)/$(1)-ssh$(BOX_SUFFIX): $(1)-ssh.json
 	rm -rf $(VIRTUALBOX_OUTPUT)
 	mkdir -p $(VIRTUALBOX_BOX_DIR)
@@ -408,6 +419,8 @@ $(eval $(call BUILDBOX,eval-win2008r2-datacenter,$(EVAL_WIN2008R2_X64),$(EVAL_WI
 $(eval $(call BUILDBOX,win2008r2-enterprise,$(WIN2008R2_X64),$(WIN2008R2_X64_CHECKSUM)))
 
 $(eval $(call BUILDBOX,win2008r2-standard,$(WIN2008R2_X64),$(WIN2008R2_X64_CHECKSUM)))
+
+$(eval $(call BUILDBOX,win2008r2-standard-novagrant,$(WIN2008R2_X64),$(WIN2008R2_X64_CHECKSUM)))
 
 $(eval $(call BUILDBOX,eval-win2008r2-standard,$(EVAL_WIN2008R2_X64),$(EVAL_WIN2008R2_X64_CHECKSUM)))
 
